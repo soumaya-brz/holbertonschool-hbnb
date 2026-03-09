@@ -1,49 +1,54 @@
-from app.persistence.repository import InMemoryRepository
 from app.models.user import User
-from app.models.amenity import Amenity
 from app.models.place import Place
+from app.models.amenity import Amenity
 
 class HBnBFacade:
-    def __init__(self):
-        self.places = {}
-        self.next_place_id = 1
+    def __init__(self, place_repo=None, user_repo=None, amenity_repo=None, review_repo=None):
+        # Repositories
+        self.place_repo = place_repo
+        self.user_repo = user_repo
+        self.amenity_repo = amenity_repo
+        self.review_repo = review_repo
 
     # ---------------- PLACES ----------------
     def list_places(self):
-        """Retourne la liste de toutes les places"""
-        return list(self.places.values())
+        """Return a list of all places"""
+        return self.place_repo.get_all() if self.place_repo else []
 
-    def create_place(self, data):
+    def create_place(self, data: dict) -> Place:
         """
-        Crée un objet Place depuis un dict et l'ajoute au 'repository'.
-        data doit contenir : title, description, price, latitude, longitude, owner
+        Create a Place object from a dictionary and add it to the repository.
+        data must contain: title, description, price, latitude, longitude, owner
         """
-        
-        owner_id = data.get("owner")
-        owner = User()  
-        owner.id = int(owner_id)
+        owner_data = data.get("owner")
+        owner = None
+        if owner_data and isinstance(owner_data, dict):
+            owner = User(**owner_data)
 
         place = Place(
-            title=data["title"],
+            title=data.get("title") or data.get("name"),
             description=data.get("description", ""),
-            price=float(data["price"]),
-            latitude=float(data["latitude"]),
-            longitude=float(data["longitude"]),
+            price=float(data.get("price", 0)),
+            latitude=float(data.get("latitude", 0.0)),
+            longitude=float(data.get("longitude", 0.0)),
             owner=owner
         )
 
-        
-        place.id = self.next_place_id
-        self.next_place_id += 1
-
-        
-        self.places[place.id] = place
+        self.place_repo.add(place)
         return place
 
-    # ---------------- USERS ----------------
-    def create_user(self, user_data: dict) -> User:
-        email = user_data.get("email")
+    def get_place(self, place_id):
+        """Return a single place by ID"""
+        return self.place_repo.get(place_id)
 
+    def update_place(self, place_id, data: dict):
+        """Update a place with new data"""
+        return self.place_repo.update(place_id, data)
+
+    # ---------------- USERS ----------------
+    def create_user(self, data: dict) -> User:
+        """Create a new user and add to the repository"""
+        email = data.get("email")
         if not email or "@" not in email:
             raise ValueError("Invalid email")
 
@@ -51,25 +56,29 @@ class HBnBFacade:
         if existing:
             raise ValueError("Email already registered")
 
-        user = User(**user_data)
+        user = User(**data)
         self.user_repo.add(user)
         return user
 
-    def get_user(self, user_id: str):
+    def get_user(self, user_id):
+        """Return a user by ID"""
         return self.user_repo.get(user_id)
 
     def get_user_by_email(self, email: str):
+        """Return a user by email"""
         return self.user_repo.get_by_attribute("email", email)
 
     def list_users(self):
+        """Return all users"""
         return self.user_repo.get_all()
 
-    def update_user(self, user_id: str, user_data: dict):
+    def update_user(self, user_id, data: dict):
+        """Update an existing user"""
         user = self.get_user(user_id)
         if not user:
             return None
 
-        new_email = user_data.get("email")
+        new_email = data.get("email")
         if new_email and new_email != user.email:
             if "@" not in new_email:
                 raise ValueError("Invalid email")
@@ -78,77 +87,65 @@ class HBnBFacade:
             if existing and existing.id != user_id:
                 raise ValueError("Email already registered")
 
-        user.update(user_data)
+        user.update(data)
         return user
 
     # ---------------- AMENITIES ----------------
-    def create_amenity(self, amenity_data: dict) -> Amenity:
-        name = amenity_data.get("name")
+    def create_amenity(self, data: dict) -> Amenity:
+        """Create a new amenity"""
+        name = data.get("name")
         if not name:
             raise ValueError("Name is required")
 
-        amenity = Amenity(**amenity_data)
+        amenity = Amenity(**data)
         self.amenity_repo.add(amenity)
         return amenity
 
-    def get_amenity(self, amenity_id: str):
+    def get_amenity(self, amenity_id):
+        """Return an amenity by ID"""
         return self.amenity_repo.get(amenity_id)
 
     def get_all_amenities(self):
+        """Return all amenities"""
         return self.amenity_repo.get_all()
 
-    def update_amenity(self, amenity_id: str, amenity_data: dict):
+    def update_amenity(self, amenity_id, data: dict):
+        """Update an existing amenity"""
         amenity = self.get_amenity(amenity_id)
         if not amenity:
             return None
-        amenity.update(amenity_data)
+        amenity.update(data)
         return amenity
 
-# ---------------- PLACES ----------------
-from app.models.place import Place
-
-class HBnBFacade:
-    def __init__(self, place_repo):
-        self.place_repo = place_repo
-
-    def list_places(self):
-        return self.place_repo.get_all()
-
-    def create_place(self, data):
-        place = Place(**data)
-        self.place_repo.add(place)
-        return place
-
-    def get_place(self, place_id):
-        return self.place_repo.get(place_id)
-
-    def update_place(self, place_id, data):
-        return self.place_repo.update(place_id, data)
-
     # ---------------- REVIEWS ----------------
-    def create_review(self, review_data):
-        text = review_data.get("text")
-        user_id = review_data.get("user_id")
-        place_id = review_data.get("place_id")
+    def create_review(self, data: dict):
+        """Create a new review"""
+        text = data.get("text")
+        user_id = data.get("user_id")
+        place_id = data.get("place_id")
 
         if not text:
             raise ValueError("Review text is required")
         if not user_id or not place_id:
             raise ValueError("user_id and place_id are required")
 
-        return self.review_repo.add(review_data)
+        return self.review_repo.add(data)
 
     def get_review(self, review_id):
+        """Return a review by ID"""
         return self.review_repo.get(review_id)
 
     def get_all_reviews(self):
+        """Return all reviews"""
         return self.review_repo.get_all()
 
-    def update_review(self, review_id, data):
+    def update_review(self, review_id, data: dict):
+        """Update a review"""
         review = self.get_review(review_id)
         if not review:
             return None
         return self.review_repo.update(review_id, data)
 
     def delete_review(self, review_id):
+        """Delete a review by ID"""
         return self.review_repo.delete(review_id)

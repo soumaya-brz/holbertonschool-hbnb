@@ -2,17 +2,29 @@ from app.models.base_model import BaseModel, ValidationError
 from app.models.user import User
 from app.models.amenity import Amenity
 
-def create_place(self, data):
-    place = Place(
-        title=data.get("name"),
-        description=data.get("description"),
-        price=data.get("price"),
-        latitude=data.get("latitude", 0.0),
-        longitude=data.get("longitude", 0.0),
-        owner=data.get("owner", None)
-    )
-    self.place_repo.add(place)
-    return place
+class Place(BaseModel):
+    def __init__(
+        self,
+        title: str,
+        description: str,
+        price: float,
+        latitude: float = 0.0,
+        longitude: float = 0.0,
+        owner: User = None
+    ):
+        super().__init__()
+        self.title = title
+        self.description = description or ""
+        self.price = float(price)
+        self.latitude = float(latitude)
+        self.longitude = float(longitude)
+
+        # Relationships
+        self.owner = owner
+        self.reviews = []     # list[Review]
+        self.amenities = []   # list[Amenity]
+
+        self.validate()
 
     def validate(self):
         if not self.title or not isinstance(self.title, str):
@@ -29,13 +41,12 @@ def create_place(self, data):
         if not (-180.0 <= self.longitude <= 180.0):
             raise ValidationError("longitude must be between -180.0 and 180.0")
 
-        if not isinstance(self.owner, User):
+        if self.owner is not None and not isinstance(self.owner, User):
             raise ValidationError("owner must be a User instance")
 
         return True
 
     def add_review(self, review):
-        # Avoid circular import issues by not importing Review at top
         self.reviews.append(review)
         self.save()
 
