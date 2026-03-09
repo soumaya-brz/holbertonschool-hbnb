@@ -1,13 +1,44 @@
 from app.persistence.repository import InMemoryRepository
 from app.models.user import User
 from app.models.amenity import Amenity
+from app.models.place import Place
 
 class HBnBFacade:
     def __init__(self):
-        self.user_repo = InMemoryRepository()
-        self.place_repo = InMemoryRepository()
-        self.review_repo = InMemoryRepository()
-        self.amenity_repo = InMemoryRepository()
+        self.places = {}
+        self.next_place_id = 1
+
+    # ---------------- PLACES ----------------
+    def list_places(self):
+        """Retourne la liste de toutes les places"""
+        return list(self.places.values())
+
+    def create_place(self, data):
+        """
+        Crée un objet Place depuis un dict et l'ajoute au 'repository'.
+        data doit contenir : title, description, price, latitude, longitude, owner
+        """
+        
+        owner_id = data.get("owner")
+        owner = User()  
+        owner.id = int(owner_id)
+
+        place = Place(
+            title=data["title"],
+            description=data.get("description", ""),
+            price=float(data["price"]),
+            latitude=float(data["latitude"]),
+            longitude=float(data["longitude"]),
+            owner=owner
+        )
+
+        
+        place.id = self.next_place_id
+        self.next_place_id += 1
+
+        
+        self.places[place.id] = place
+        return place
 
     # ---------------- USERS ----------------
     def create_user(self, user_data: dict) -> User:

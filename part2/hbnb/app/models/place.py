@@ -2,30 +2,17 @@ from app.models.base_model import BaseModel, ValidationError
 from app.models.user import User
 from app.models.amenity import Amenity
 
-
-class Place(BaseModel):
-    def __init__(
-        self,
-        title: str,
-        description: str,
-        price: float,
-        latitude: float,
-        longitude: float,
-        owner: User
-    ):
-        super().__init__()
-        self.title = title
-        self.description = description or ""
-        self.price = float(price)
-        self.latitude = float(latitude)
-        self.longitude = float(longitude)
-
-        # Relationships
-        self.owner = owner
-        self.reviews = []     # list[Review]
-        self.amenities = []   # list[Amenity]
-
-        self.validate()
+def create_place(self, data):
+    place = Place(
+        title=data.get("name"),
+        description=data.get("description"),
+        price=data.get("price"),
+        latitude=data.get("latitude", 0.0),
+        longitude=data.get("longitude", 0.0),
+        owner=data.get("owner", None)
+    )
+    self.place_repo.add(place)
+    return place
 
     def validate(self):
         if not self.title or not isinstance(self.title, str):
