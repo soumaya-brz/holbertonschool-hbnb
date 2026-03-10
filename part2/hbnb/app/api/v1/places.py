@@ -3,20 +3,17 @@ from app.services import facade_instance as facade
 
 ns = Namespace("places", description="Place operations")
 
-# Model pour créer une place
 place_model = ns.model("Place", {
     "title": fields.String(required=True),
     "description": fields.String,
     "price": fields.Float(required=True),
     "latitude": fields.Float(required=True),
     "longitude": fields.Float(required=True),
-    "owner": fields.String(required=True)
+    "owner_id": fields.String(required=True),
+    "amenities": fields.List(fields.String)
 })
 
-# Model pour lier des amenities
-amenity_list_model = ns.model("PlaceAmenities", {
-    "amenities": fields.List(fields.String, required=True)
-})
+# ---------------- Routes pour les places ----------------
 
 @ns.route("/")
 class PlacesRoot(Resource):
@@ -26,27 +23,37 @@ class PlacesRoot(Resource):
         return [p.to_dict() for p in places], 200
 
     def post(self):
-        """Créer une place"""
+        """Créer une nouvelle place"""
         data = ns.payload
-        new_place = facade.create_place(data)
+        try:
+            new_place = facade.create_place(data)
+        except ValueError as e:
+            return {"error": str(e)}, 400
         return new_place.to_dict(), 201
 
-@ns.route("/<place_id>/amenities/")
+# ---------------- Routes pour gérer les amenities d'une place ----------------
+
+@ns.route("/<string:place_id>/amenities/")
 class PlaceAmenities(Resource):
-    @ns.expect(amenity_list_model)
+    def get(self, place_id):
+        """Lister tous les amenities d'une place"""
+        place = facade.get_place(place_id)
+        if not place:
+            return {"error": "Place not found"}, 404
+        return [a.to_dict() for a in place.amenities], 200
+
     def post(self, place_id):
-        """Associer une ou plusieurs amenities à une place"""
+        """Ajouter des amenities à une place"""
         data = ns.payload
+        amenities_ids = data.get("amenities", [])
         place = facade.get_place(place_id)
         if not place:
             return {"error": "Place not found"}, 404
 
-        added_amenities = []
-        for amenity_id in data.get("amenities", []):
-            amenity = facade.get_amenity(amenity_id)
+        for aid in amenities_ids:
+            amenity = facade.get_amenity(aid)
             if not amenity:
-                return {"error": f"Amenity {amenity_id} not found"}, 404
+                return {"error": f"Amenity {aid} not found"}, 404
             place.add_amenity(amenity)
-            added_amenities.append(amenity.id)
 
-        return {"id": place.id, "amenities": added_amenities}, 200
+        return place.to_dict(), 200
