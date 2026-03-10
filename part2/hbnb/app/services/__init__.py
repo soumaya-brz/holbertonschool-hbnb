@@ -1,4 +1,4 @@
-from app.repositories.user_repo import UserRepository
+from app.persistence.repository import InMemoryRepository
 from app.repositories.place_repo import PlaceRepository
 from app.repositories.amenity_repo import AmenityRepository
 from app.repositories.review_repo import ReviewRepository
