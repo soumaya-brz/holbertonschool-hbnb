@@ -1,6 +1,7 @@
 from app.models.base_model import BaseModel
 from .user import User
 
+
 class Place(BaseModel):
     def __init__(self, title, description, price, latitude, longitude, owner):
         super().__init__()
@@ -97,17 +98,17 @@ class Place(BaseModel):
             self.amenities.append(amenity)
 
     def to_dict(self):
-    return {
-        "id": self.id,
-        "title": self.title,
-        "description": self.description,
-        "price": self.price,
-        "latitude": self.latitude,
-        "longitude": self.longitude,
-        "owner_id": self.owner.id if self.owner else None,
-        "created_at": self.created_at.isoformat(),
-        "updated_at": self.updated_at.isoformat(),
-        "reviews": [r.id for r in self.reviews],
-        "amenities": [a.id for a in self.amenities],
-    }
+        return {
+            "id": self.id,
+            "title": self.title,
+            "description": self.description,
+            "price": self.price,
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+            "owner_id": self.owner.id if self.owner else None,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+            "reviews": [r.id for r in self.reviews],
+            "amenities": [a.id for a in self.amenities],
+        }
             
