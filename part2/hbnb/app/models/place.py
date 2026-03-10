@@ -104,7 +104,7 @@ class Place(BaseModel):
             "price": self.price,
             "latitude": self.latitude,
             "longitude": self.longitude,
-            "owner": self.owner.id,
+            "owner_id": self.owner.id if self.owner else None,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
             "reviews": [r.id for r in self.reviews],
