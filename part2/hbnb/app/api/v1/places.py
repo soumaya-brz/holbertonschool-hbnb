@@ -9,32 +9,24 @@ place_model = ns.model("Place", {
     "price": fields.Float(required=True),
     "latitude": fields.Float(required=True),
     "longitude": fields.Float(required=True),
-    "owner_id": fields.String(required=True)
+    "owner": fields.String(required=True)
 })
 
 
 @ns.route("/")
 class PlacesRoot(Resource):
 
-    @ns.response(200, "List of places retrieved successfully")
     def get(self):
-        """Retrieve all places"""
-        places = facade.get_all_places()
+        """Lister toutes les places"""
+        places = facade.get_all_places()  # <-- correction ici
         return [p.to_dict() for p in places], 200
 
-
-    @ns.expect(place_model, validate=True)
-    @ns.response(201, "Place successfully created")
-    @ns.response(400, "Invalid input data")
     def post(self):
-        """Create a place"""
+        """Créer une place"""
         data = ns.payload
 
         if data.get("price") is None or data["price"] <= 0:
             return {"error": "Price must be positive"}, 400
 
-        try:
-            place = facade.create_place(data)
-            return place.to_dict(), 201
-        except ValueError as e:
-            return {"error": str(e)}, 400
+        new_place = facade.create_place(data)
+        return new_place.to_dict(), 201

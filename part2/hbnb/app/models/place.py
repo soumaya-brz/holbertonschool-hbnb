@@ -1,6 +1,5 @@
-from .base_model import BaseModel
+from .base import BaseModel
 from .user import User
-
 
 class Place(BaseModel):
     def __init__(self, title, description, price, latitude, longitude, owner):
@@ -14,59 +13,100 @@ class Place(BaseModel):
         self.reviews = []
         self.amenities = []
 
-        # Relationships
-        self.owner = owner
-        self.reviews = []     # list[Review]
-        self.amenities = []   # list[Amenity]
+    @property
+    def title(self):
+        return self._title
 
-        self.validate()
+    @title.setter
+    def title(self, value):
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError("title is required")
+        v = value.strip()
+        if len(v) > 100:
+            raise ValueError("title must be at most 100 characters")
+        self._title = v
 
-    def validate(self):
-        if not self.title or not isinstance(self.title, str):
-            raise ValidationError("title is required")
-        if len(self.title) > 100:
-            raise ValidationError("title must be <= 100 characters")
+    @property
+    def description(self):
+        return self._description
 
-        if self.price <= 0:
-            raise ValidationError("price must be a positive value")
+    @description.setter
+    def description(self, value):
+        if value is None:
+            self._description = ""
+            return
+        if not isinstance(value, str):
+            raise ValueError("description must be a string")
+        self._description = value
 
-        if not (-90.0 <= self.latitude <= 90.0):
-            raise ValidationError("latitude must be between -90.0 and 90.0")
+    @property
+    def price(self):
+        return self._price
 
-        if not (-180.0 <= self.longitude <= 180.0):
-            raise ValidationError("longitude must be between -180.0 and 180.0")
+    @price.setter
+    def price(self, value):
+        if not isinstance(value, (int, float)):
+            raise ValueError("price must be a number")
+        v = float(value)
+        if v <= 0:
+            raise ValueError("price must be a positive value")
+        self._price = v
 
-        if self.owner is not None and not isinstance(self.owner, User):
-            raise ValidationError("owner must be a User instance")
+    @property
+    def latitude(self):
+        return self._latitude
 
-        return True
+    @latitude.setter
+    def latitude(self, value):
+        if not isinstance(value, (int, float)):
+            raise ValueError("latitude must be a number")
+        v = float(value)
+        if v < -90.0 or v > 90.0:
+            raise ValueError("latitude must be between -90.0 and 90.0")
+        self._latitude = v
+
+    @property
+    def longitude(self):
+        return self._longitude
+
+    @longitude.setter
+    def longitude(self, value):
+        if not isinstance(value, (int, float)):
+            raise ValueError("longitude must be a number")
+        v = float(value)
+        if v < -180.0 or v > 180.0:
+            raise ValueError("longitude must be between -180.0 and 180.0")
+        self._longitude = v
+
+    @property
+    def owner(self):
+        return self._owner
+
+    @owner.setter
+    def owner(self, value):
+        if not isinstance(value, User):
+            raise ValueError("owner must be an User instance")
+        self._owner = value
 
     def add_review(self, review):
-        self.reviews.append(review)
-        self.save()
+        if review not in self.reviews:
+            self.reviews.append(review)
 
-    def add_amenity(self, amenity: Amenity):
-        if not isinstance(amenity, Amenity):
-            raise ValidationError("amenity must be an Amenity instance")
+    def add_amenity(self, amenity):
         if amenity not in self.amenities:
             self.amenities.append(amenity)
-            self.save()
-
-    def remove_amenity(self, amenity: Amenity):
-        if amenity in self.amenities:
-            self.amenities.remove(amenity)
-            self.save()
 
     def to_dict(self):
-        base = super().to_dict()
-        base.update({
+        return {
+            "id": self.id,
             "title": self.title,
             "description": self.description,
             "price": self.price,
             "latitude": self.latitude,
             "longitude": self.longitude,
-            "owner_id": getattr(self.owner, "id", None),
-            "amenities": [a.to_dict() for a in self.amenities],
-            "reviews_count": len(self.reviews),
-        })
-        return base
+            "owner": self.owner.id,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+            "reviews": [r.id for r in self.reviews],
+            "amenities": [a.id for a in self.amenities],
+        }

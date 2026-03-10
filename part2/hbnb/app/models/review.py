@@ -8,14 +8,9 @@ class Review(BaseModel):
         super().__init__()
         self.text = text
         self.rating = int(rating)
-
-        # Relationships
         self.place = place
         self.user = user
-
         self.validate()
-
-        # Link review to place (relationship)
         self.place.add_review(self)
 
     def validate(self):
@@ -42,4 +37,3 @@ class Review(BaseModel):
             "user_id": getattr(self.user, "id", None),
         })
         return base
-
