@@ -1,23 +1,18 @@
-from app.models.base_model import BaseModel, ValidationError
-from app.models.user import User
-from app.models.amenity import Amenity
+from .base_model import BaseModel
+from .user import User
+
 
 class Place(BaseModel):
-    def __init__(
-        self,
-        title: str,
-        description: str,
-        price: float,
-        latitude: float = 0.0,
-        longitude: float = 0.0,
-        owner: User = None
-    ):
+    def __init__(self, title, description, price, latitude, longitude, owner):
         super().__init__()
         self.title = title
-        self.description = description or ""
-        self.price = float(price)
-        self.latitude = float(latitude)
-        self.longitude = float(longitude)
+        self.description = description
+        self.price = price
+        self.latitude = latitude
+        self.longitude = longitude
+        self.owner = owner
+        self.reviews = []
+        self.amenities = []
 
         # Relationships
         self.owner = owner
