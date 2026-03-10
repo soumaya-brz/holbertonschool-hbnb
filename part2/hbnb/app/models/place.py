@@ -110,3 +110,4 @@ class Place(BaseModel):
         "reviews": [r.id for r in self.reviews],
         "amenities": [a.id for a in self.amenities],
     }
+            
