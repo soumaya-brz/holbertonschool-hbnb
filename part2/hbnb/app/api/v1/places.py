@@ -1,5 +1,5 @@
-from app.models.base_model import BaseModel
-from .user import User
+from flask_restx import Namespace, Resource, fields
+from app.services import facade_instance as facade
 
 
 class Place(BaseModel):
