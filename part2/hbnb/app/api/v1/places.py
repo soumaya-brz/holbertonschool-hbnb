@@ -1,62 +1,113 @@
-# app/api/v1/places.py
-from flask_restx import Namespace, Resource, fields
-from app.services import facade_instance as facade
+from app.models.base_model import BaseModel
+from .user import User
 
-ns = Namespace("places", description="Place operations")
 
-# Définition du modèle Place pour Swagger
-place_model = ns.model("Place", {
-    "title": fields.String(required=True),
-    "description": fields.String,
-    "price": fields.Float(required=True),
-    "latitude": fields.Float(required=True),
-    "longitude": fields.Float(required=True),
-    "owner_id": fields.String(required=True),
-    "amenities": fields.List(fields.String)
-})
+class Place(BaseModel):
+    def __init__(self, title, description, price, latitude, longitude, owner):
+        super().__init__()
+        self.title = title
+        self.description = description
+        self.price = price
+        self.latitude = latitude
+        self.longitude = longitude
+        self.owner = owner
+        self.reviews = []
+        self.amenities = []
 
-# ---------------- Routes pour les places ----------------
-@ns.route("/")
-class PlacesRoot(Resource):
-    @ns.marshal_list_with(place_model)  # <- important pour Swagger
-    def get(self):
-        """Lister toutes les places"""
-        places = facade.get_all_places()
-        return [p.to_dict() for p in places], 200
+    @property
+    def title(self):
+        return self._title
 
-    @ns.expect(place_model)
-    @ns.marshal_with(place_model, code=201)
-    def post(self):
-        """Créer une nouvelle place"""
-        data = ns.payload
-        try:
-            new_place = facade.create_place(data)
-        except ValueError as e:
-            return {"error": str(e)}, 400
-        return new_place.to_dict(), 201
+    @title.setter
+    def title(self, value):
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError("title is required")
+        value = value.strip()
+        if len(value) > 100:
+            raise ValueError("title must be at most 100 characters")
+        self._title = value
 
-# ---------------- Routes pour gérer les amenities d'une place ----------------
-@ns.route("/<string:place_id>/amenities/")
-class PlaceAmenities(Resource):
-    def get(self, place_id):
-        """Lister tous les amenities d'une place"""
-        place = facade.get_place(place_id)
-        if not place:
-            return {"error": "Place not found"}, 404
-        return [a.to_dict() for a in place.amenities], 200
+    @property
+    def description(self):
+        return self._description
 
-    def post(self, place_id):
-        """Ajouter des amenities à une place"""
-        data = ns.payload
-        amenities_ids = data.get("amenities", [])
-        place = facade.get_place(place_id)
-        if not place:
-            return {"error": "Place not found"}, 404
+    @description.setter
+    def description(self, value):
+        if value is None:
+            self._description = ""
+            return
+        if not isinstance(value, str):
+            raise ValueError("description must be a string")
+        self._description = value
 
-        for aid in amenities_ids:
-            amenity = facade.get_amenity(aid)
-            if not amenity:
-                return {"error": f"Amenity {aid} not found"}, 404
-            place.add_amenity(amenity)
+    @property
+    def price(self):
+        return self._price
 
-        return place.to_dict(), 200
+    @price.setter
+    def price(self, value):
+        if not isinstance(value, (int, float)):
+            raise ValueError("price must be a number")
+        value = float(value)
+        if value <= 0:
+            raise ValueError("price must be a positive value")
+        self._price = value
+
+    @property
+    def latitude(self):
+        return self._latitude
+
+    @latitude.setter
+    def latitude(self, value):
+        if not isinstance(value, (int, float)):
+            raise ValueError("latitude must be a number")
+        value = float(value)
+        if value < -90.0 or value > 90.0:
+            raise ValueError("latitude must be between -90 and 90")
+        self._latitude = value
+
+    @property
+    def longitude(self):
+        return self._longitude
+
+    @longitude.setter
+    def longitude(self, value):
+        if not isinstance(value, (int, float)):
+            raise ValueError("longitude must be a number")
+        value = float(value)
+        if value < -180.0 or value > 180.0:
+            raise ValueError("longitude must be between -180 and 180")
+        self._longitude = value
+
+    @property
+    def owner(self):
+        return self._owner
+
+    @owner.setter
+    def owner(self, value):
+        if not isinstance(value, User):
+            raise ValueError("owner must be a User instance")
+        self._owner = value
+
+    def add_review(self, review):
+        if review not in self.reviews:
+            self.reviews.append(review)
+
+    def add_amenity(self, amenity):
+        if amenity not in self.amenities:
+            self.amenities.append(amenity)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "description": self.description,
+            "price": self.price,
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+            "owner_id": self.owner.id if self.owner else None,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+            "reviews": [r.id for r in self.reviews],
+            "amenities": [a.id for a in self.amenities],
+        }
