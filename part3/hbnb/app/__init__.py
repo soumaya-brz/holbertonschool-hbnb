@@ -2,18 +2,23 @@
 
 from flask import Flask
 from flask_restx import Api
+from flask_bcrypt import Bcrypt
 from .api.v1.places import ns as places_ns
 from .api.v1.users import ns as users_ns
 from .api.v1.amenities import ns as amenities_ns
 from .api.v1.reviews import ns as reviews_ns
-from config import Config  # On importe la classe Config que tu as créée
+from config import Config
+
+bcrypt = Bcrypt()
 
 def create_app(config_class=Config):
     """
     Application Factory
     """
     app = Flask(__name__)
-    app.config.from_object(config_class)  # On charge la configuration
+    app.config.from_object(config_class)
+
+    bcrypt.init_app(app)
 
     api = Api(app, prefix="/api/v1")
     
