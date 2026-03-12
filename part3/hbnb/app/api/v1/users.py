@@ -1,4 +1,5 @@
 from flask_restx import Namespace, Resource, fields
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from app.services import facade_instance as facade
 
 ns = Namespace("users", description="User operations")
@@ -36,7 +37,12 @@ class UserList(Resource):
             return {"error": str(e)}, 400
 
     @ns.response(200, "List of users retrieved successfully")
+    @jwt_required()
     def get(self):
+        claims = get_jwt()
+        if not claims.get("is_admin"):
+            return {"error": "Access forbidden"}, 403
+
         users = facade.get_all_users()
         return [
             {
@@ -53,7 +59,14 @@ class UserList(Resource):
 class UserResource(Resource):
     @ns.response(200, "User details retrieved successfully")
     @ns.response(404, "User not found")
+    @jwt_required()
     def get(self, user_id):
+        claims = get_jwt()
+        current_user_id = get_jwt_identity()
+
+        if not claims.get("is_admin") and str(current_user_id) != str(user_id):
+            return {"error": "Access forbidden"}, 403
+
         user = facade.get_user(user_id)
         if not user:
             return {"error": "User not found"}, 404
@@ -69,7 +82,14 @@ class UserResource(Resource):
     @ns.response(200, "User updated successfully")
     @ns.response(404, "User not found")
     @ns.response(400, "Email already registered")
+    @jwt_required()
     def put(self, user_id):
+        claims = get_jwt()
+        current_user_id = get_jwt_identity()
+
+        if not claims.get("is_admin") and str(current_user_id) != str(user_id):
+            return {"error": "Access forbidden"}, 403
+
         user_data = ns.payload
 
         try:
