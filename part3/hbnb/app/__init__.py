@@ -3,6 +3,7 @@
 from flask import Flask
 from flask_restx import Api
 from flask_bcrypt import Bcrypt
+from flask_jwt_extended import JWTManager
 from .api.v1.places import ns as places_ns
 from .api.v1.users import ns as users_ns
 from .api.v1.amenities import ns as amenities_ns
@@ -10,6 +11,7 @@ from .api.v1.reviews import ns as reviews_ns
 from config import Config
 
 bcrypt = Bcrypt()
+jwt = JWTManager()
 
 def create_app(config_class=Config):
     """
@@ -19,6 +21,7 @@ def create_app(config_class=Config):
     app.config.from_object(config_class)
 
     bcrypt.init_app(app)
+    jwt.init_app(app)
 
     api = Api(app, prefix="/api/v1")
     
