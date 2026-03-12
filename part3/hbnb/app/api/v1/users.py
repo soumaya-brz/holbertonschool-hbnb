@@ -9,36 +9,40 @@ user_model = ns.model("User", {
     "last_name": fields.String(required=True, description="Last name of the user"),
     "email": fields.String(required=True, description="Email of the user"),
     "password": fields.String(required=True, description="Password of the user"),
+    "is_admin": fields.Boolean(description="Is admin"),
 })
 
 @ns.route("/")
 class UserList(Resource):
     @ns.expect(user_model, validate=True)
-    @ns.response(201, "User successfully created")
-    @ns.response(400, "Invalid input or email already registered")
+    @jwt_required()
     def post(self):
-        user_data = ns.payload
+        """Create a new user (admin only)"""
+        claims = get_jwt()
+        if not claims.get("is_admin"):
+            return {"error": "Access forbidden"}, 403
 
+        user_data = ns.payload
         try:
             existing_user = facade.get_user_by_email(user_data["email"])
             if existing_user:
                 return {"error": "Email already registered"}, 400
 
             new_user = facade.create_user(user_data)
-
             return {
                 "id": new_user.id,
                 "first_name": new_user.first_name,
                 "last_name": new_user.last_name,
                 "email": new_user.email,
+                "is_admin": new_user.is_admin
             }, 201
-
         except ValueError as e:
             return {"error": str(e)}, 400
 
     @ns.response(200, "List of users retrieved successfully")
     @jwt_required()
     def get(self):
+        """List all users (admin only)"""
         claims = get_jwt()
         if not claims.get("is_admin"):
             return {"error": "Access forbidden"}, 403
@@ -49,9 +53,9 @@ class UserList(Resource):
                 "id": u.id,
                 "first_name": u.first_name,
                 "last_name": u.last_name,
-                "email": u.email
-            }
-            for u in users
+                "email": u.email,
+                "is_admin": u.is_admin
+            } for u in users
         ], 200
 
 
@@ -76,6 +80,7 @@ class UserResource(Resource):
             "first_name": user.first_name,
             "last_name": user.last_name,
             "email": user.email,
+            "is_admin": user.is_admin
         }, 200
 
     @ns.expect(user_model, validate=True)
@@ -84,14 +89,13 @@ class UserResource(Resource):
     @ns.response(400, "Email already registered")
     @jwt_required()
     def put(self, user_id):
+        """Update user (admin or self)"""
         claims = get_jwt()
         current_user_id = get_jwt_identity()
-
         if not claims.get("is_admin") and str(current_user_id) != str(user_id):
             return {"error": "Access forbidden"}, 403
 
         user_data = ns.payload
-
         try:
             updated = facade.update_user(user_id, user_data)
         except ValueError as e:
@@ -105,4 +109,5 @@ class UserResource(Resource):
             "first_name": updated.first_name,
             "last_name": updated.last_name,
             "email": updated.email,
+            "is_admin": updated.is_admin
         }, 200
