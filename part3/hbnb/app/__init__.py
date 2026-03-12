@@ -6,9 +6,15 @@ from .api.v1.places import ns as places_ns
 from .api.v1.users import ns as users_ns
 from .api.v1.amenities import ns as amenities_ns
 from .api.v1.reviews import ns as reviews_ns
+from config import Config  # On importe la classe Config que tu as créée
 
-def create_app():
+def create_app(config_class=Config):
+    """
+    Application Factory
+    """
     app = Flask(__name__)
+    app.config.from_object(config_class)  # On charge la configuration
+
     api = Api(app, prefix="/api/v1")
     
     api.add_namespace(users_ns)
