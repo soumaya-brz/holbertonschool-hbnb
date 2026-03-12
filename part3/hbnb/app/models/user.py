@@ -1,17 +1,21 @@
 import re
+from flask_bcrypt import Bcrypt
 from app.models.base_model import BaseModel, ValidationError
 
+bcrypt = Bcrypt()
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
 class User(BaseModel):
-    def __init__(self, first_name: str, last_name: str, email: str, is_admin: bool = False):
+    def __init__(self, first_name: str, last_name: str, email: str, password: str, is_admin: bool = False):
         super().__init__()
         self.first_name = first_name
         self.last_name = last_name
         self.email = email
         self.is_admin = bool(is_admin)
+
+        self.password_hash = bcrypt.generate_password_hash(password).decode("utf-8")
 
         self.validate()
 
@@ -33,6 +37,9 @@ class User(BaseModel):
 
         return True
 
+    def check_password(self, password: str):
+        return bcrypt.check_password_hash(self.password_hash, password)
+
     def to_dict(self):
         base = super().to_dict()
         base.update({
@@ -42,4 +49,3 @@ class User(BaseModel):
             "is_admin": self.is_admin,
         })
         return base
-
