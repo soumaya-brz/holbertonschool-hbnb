@@ -115,7 +115,6 @@ class HBnBFacade:
 
         if user_id is None or place_id is None:
             raise ValueError("user_id and place_id are required")
-
         if rating is None or rating < 1 or rating > 5:
             raise ValueError("rating must be between 1 and 5")
 
