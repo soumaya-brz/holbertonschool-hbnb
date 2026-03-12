@@ -1,9 +1,8 @@
-# app/__init__.py
-
 from flask import Flask
 from flask_restx import Api
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager
+from flask_sqlalchemy import SQLAlchemy
 from .api.v1.places import ns as places_ns
 from .api.v1.users import ns as users_ns
 from .api.v1.amenities import ns as amenities_ns
@@ -12,6 +11,7 @@ from config import Config
 
 bcrypt = Bcrypt()
 jwt = JWTManager()
+db = SQLAlchemy()
 
 def create_app(config_class=Config):
     """
@@ -22,6 +22,7 @@ def create_app(config_class=Config):
 
     bcrypt.init_app(app)
     jwt.init_app(app)
+    db.init_app(app)
 
     api = Api(app, prefix="/api/v1")
     

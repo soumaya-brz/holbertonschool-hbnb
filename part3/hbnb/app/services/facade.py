@@ -1,16 +1,16 @@
-from app.persistence.repository import InMemoryRepository
-from app.models.amenity import Amenity
+from app.persistence.sqlalchemy_repository import SQLAlchemyRepository
 from app.models.user import User
+from app.models.amenity import Amenity
 from app.models.place import Place
 from app.models.review import Review
-
+from app import db
 
 class HBnBFacade:
     def __init__(self):
-        self.user_repo = InMemoryRepository()
-        self.place_repo = InMemoryRepository()
-        self.review_repo = InMemoryRepository()
-        self.amenity_repo = InMemoryRepository()
+        self.user_repo = SQLAlchemyRepository(User, db.session)
+        self.place_repo = SQLAlchemyRepository(Place, db.session)
+        self.review_repo = SQLAlchemyRepository(Review, db.session)
+        self.amenity_repo = SQLAlchemyRepository(Amenity, db.session)
 
     # ---------------- USERS ----------------
     def create_user(self, user_data):
@@ -72,7 +72,6 @@ class HBnBFacade:
             longitude=place_data["longitude"],
             owner=owner,
         )
-
         self.place_repo.add(place)
         return place
 
@@ -88,7 +87,6 @@ class HBnBFacade:
             return None
 
         updated_data = dict(place_data)
-
         if "owner_id" in updated_data:
             owner = self.get_user(updated_data["owner_id"])
             if not owner:
