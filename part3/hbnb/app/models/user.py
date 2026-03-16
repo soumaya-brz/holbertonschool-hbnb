@@ -1,8 +1,10 @@
 import re
 from flask_bcrypt import generate_password_hash, check_password_hash
 from app.models.base_model import BaseModel
+from app import db
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
 
 class User(BaseModel):
     __tablename__ = "users"
@@ -12,6 +14,9 @@ class User(BaseModel):
     email = db.Column(db.String(120), nullable=False, unique=True)
     password_hash = db.Column(db.String(128), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
+
+    places = db.relationship("Place", backref="owner", lazy=True, cascade="all, delete-orphan")
+    reviews = db.relationship("Review", backref="user", lazy=True, cascade="all, delete-orphan")
 
     def __init__(self, first_name, last_name, email, password, is_admin=False):
         super().__init__()
@@ -25,8 +30,10 @@ class User(BaseModel):
     def validate(self):
         if not self.first_name or len(self.first_name) > 50:
             raise ValueError("first_name is required and must be <= 50 characters")
+
         if not self.last_name or len(self.last_name) > 50:
             raise ValueError("last_name is required and must be <= 50 characters")
+
         if not self.email or not EMAIL_RE.match(self.email):
             raise ValueError("email is required and must be valid")
 

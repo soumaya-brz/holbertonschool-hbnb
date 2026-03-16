@@ -8,9 +8,8 @@ class Review(BaseModel):
     text = db.Column(db.String(1024), nullable=False)
     rating = db.Column(db.Integer, nullable=False)
 
-    # Relations ajoutées plus tard
-    place_id = db.Column(db.String(36), nullable=False)
-    user_id = db.Column(db.String(36), nullable=False)
+    place_id = db.Column(db.String(36), db.ForeignKey("places.id"), nullable=False)
+    user_id = db.Column(db.String(36), db.ForeignKey("users.id"), nullable=False)
 
     def __init__(self, text, rating, place=None, user=None, place_id=None, user_id=None):
         super().__init__()
