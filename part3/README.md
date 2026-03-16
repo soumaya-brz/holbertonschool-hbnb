@@ -1,14 +1,16 @@
-# HBnB Evolution — Part 2
+# HBnB Project – Part 3
 
-The Part 2 Flask application is located in `part2/hbnb/`.
+## Description
+Backend REST API pour gérer : utilisateurs, lieux, reviews et commodités.  
+JWT pour authentification, rôles admin et persistance via SQLAlchemy.
 
-## Run
+## Installation
 ```bash
-cd part2/hbnb
+git clone <repo-url>
+cd holbertonschool-hbnb/part3
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
-python run.py
-```
-
-Swagger UI:
-- http://127.0.0.1:5000/api/v1/
-
+export FLASK_APP=app
+export FLASK_ENV=development
+flask run
